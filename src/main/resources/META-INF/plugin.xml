@@ -13,7 +13,12 @@
                 factoryClass="com.github.davidseptimus.paletteerintellijplugin.toolWindow.PaletteerToolWindowFactory"
                 id="Paletteer"
                 anchor="bottom"
+                icon="AllIcons.Toolwindows.ToolWindowPalette"
         />
+        <notificationGroup id="Paletteer Notifications"
+                           displayType="BALLOON"
+                           bundle="messages.paletteerBundle"
+                           key="notification.group.paletteer.notifications"/>
     </extensions>
     <actions resource-bundle="messages.paletteerBundle">
         <action id="com.github.davidseptimus.paletteerintellijplugin.action.LookupTextAttributeAction"
@@ -21,6 +26,12 @@
         >
             <add-to-group group-id="EditorPopupMenu" anchor="last"/>
             <keyboard-shortcut first-keystroke="alt C" keymap="$default"/>
+        </action>
+        <action id="com.github.davidseptimus.paletteerintellijplugin.action.CopyHighlightForegroundAction"
+                class="com.github.davidseptimus.paletteerintellijplugin.action.CopyHighlightForegroundAction"
+        >
+            <add-to-group group-id="EditorPopupMenu" anchor="last"/>
+            <keyboard-shortcut first-keystroke="alt shift C" keymap="$default"/>
         </action>
     </actions>
 </idea-plugin>

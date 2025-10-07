@@ -1,6 +1,7 @@
 package com.github.davidseptimus.paletteerintellijplugin.toolWindow
 
 import com.intellij.icons.AllIcons
+import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.Project
@@ -24,7 +25,6 @@ class PaletteerToolWindowFactory : ToolWindowFactory {
         val content = ContentFactory.getInstance().createContent(paletteerToolWindow.getContent(), null, false)
         toolWindow.contentManager.addContent(content)
         toolWindow.setTitleActions(listOf(paletteerToolWindow.toggleLayoutAction))
-        toolWindow.setIcon(AllIcons.Toolwindows.ToolWindowPalette)
 
         var lastAnchor = toolWindow.anchor
         val connection = project.messageBus.connect()
@@ -54,7 +54,7 @@ class PaletteerToolWindow(private val project: Project, initialVertical: Boolean
         if (isVertical != vertical) {
             isVertical = vertical
             splitter.orientation = isVertical
-            splitter.proportion = 0.7f
+            splitter.proportion = 0.9f
             splitter.firstComponent = LookupPanel()
             splitter.secondComponent = ReplacePanel(project)
             splitter.revalidate()
@@ -63,10 +63,13 @@ class PaletteerToolWindow(private val project: Project, initialVertical: Boolean
     }
 
     val toggleLayoutAction = object : AnAction("Toggle Layout", null, AllIcons.Actions.SplitVertically) {
+
+        override fun getActionUpdateThread() = ActionUpdateThread.EDT
+
         override fun actionPerformed(e: AnActionEvent) {
             isVertical = !isVertical
             splitter.orientation = isVertical
-            splitter.proportion = 0.7f
+            splitter.proportion = 0.9f
             splitter.firstComponent = LookupPanel()
             splitter.secondComponent = ReplacePanel(project)
             splitter.revalidate()
@@ -80,7 +83,7 @@ class PaletteerToolWindow(private val project: Project, initialVertical: Boolean
     fun getContent() = JBPanel<JBPanel<*>>().apply {
         layout = BorderLayout()
 
-        splitter = JBSplitter(isVertical, 0.7f).apply {
+        splitter = JBSplitter(isVertical, 0.9f).apply {
             firstComponent = LookupPanel()
             secondComponent = ReplacePanel(project)
         }

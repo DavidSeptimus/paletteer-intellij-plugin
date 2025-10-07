@@ -283,7 +283,9 @@ class LookupPanel : JBPanel<JBPanel<*>>() {
             searchEditorColors(query, scheme, results, searchModel.useRegex)
         }
 
-        tableModel.items = results
+        // Sort results alphabetically by key (case-insensitive, nulls last)
+        val sortedResults = results.sortedWith(compareBy({ it.key.lowercase() }, { it.key == null }))
+        tableModel.items = sortedResults
     }
 
     private fun searchTextAttributes(
