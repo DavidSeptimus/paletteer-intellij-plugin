@@ -101,6 +101,40 @@ class ColorReplacementService {
     }
 
     /**
+     * Update a text attribute in the scheme and reload the editor.
+     *
+     * @param scheme The editor color scheme to modify
+     * @param attributeKeyName The name of the text attribute key
+     * @param foreground The foreground color (or null)
+     * @param background The background color (or null)
+     * @param effectColor The effect color (or null)
+     * @param effectType The effect type (or null)
+     * @param fontType The font type (Font.BOLD | Font.ITALIC)
+     */
+    fun updateTextAttribute(
+        scheme: EditorColorsScheme,
+        attributeKeyName: String,
+        foreground: Color?,
+        background: Color?,
+        effectColor: Color?,
+        effectType: com.intellij.openapi.editor.markup.EffectType?,
+        fontType: Int
+    ) {
+        val key = TextAttributesKey.find(attributeKeyName) ?: return
+
+        val newAttrs = com.intellij.openapi.editor.markup.TextAttributes(
+            foreground,
+            background,
+            effectColor,
+            effectType,
+            fontType
+        )
+
+        scheme.setAttributes(key, newAttrs)
+        forceReloadScheme(scheme)
+    }
+
+    /**
      * Force the editor to reload the color scheme and update all open editors.
      * Should be called after making changes to a scheme.
      * @param scheme The editor color scheme to reload
@@ -118,13 +152,9 @@ class ColorReplacementService {
             scheme
         }
         colorsManager.setGlobalScheme(modifiableScheme)
+
         // Refresh all open editors to apply the new scheme
         val editorFactory = com.intellij.openapi.editor.EditorFactory.getInstance()
-        try {
-            val refreshMethod = editorFactory.javaClass.getMethod("refreshAllEditors")
-            refreshMethod.invoke(editorFactory)
-        } catch (e: NoSuchMethodException) {
-            // Fallback: close and reopen editors or notify listeners if needed
-        }
+        editorFactory.refreshAllEditors()
     }
 }

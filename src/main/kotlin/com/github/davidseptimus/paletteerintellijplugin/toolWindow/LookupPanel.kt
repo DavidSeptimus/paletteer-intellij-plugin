@@ -5,7 +5,6 @@ import com.intellij.openapi.editor.colors.EditorColorsManager
 import com.intellij.openapi.editor.colors.EditorColorsScheme
 import com.intellij.openapi.editor.colors.TextAttributesKey
 import com.intellij.openapi.editor.markup.EffectType
-import com.intellij.openapi.ui.DialogPanel
 import com.intellij.ui.JBColor
 import com.intellij.ui.SearchTextField
 import com.intellij.ui.components.JBCheckBox
@@ -20,12 +19,11 @@ import com.intellij.util.ui.ListTableModel
 import java.awt.BorderLayout
 import java.awt.Color
 import java.awt.Component
-import javax.swing.BorderFactory
-import javax.swing.JLabel
-import javax.swing.JTable
-import javax.swing.SwingConstants
+import java.awt.Font
+import javax.swing.*
 import javax.swing.event.DocumentEvent
 import javax.swing.event.DocumentListener
+import javax.swing.table.TableCellEditor
 import javax.swing.table.TableCellRenderer
 
 /**
@@ -33,13 +31,113 @@ import javax.swing.table.TableCellRenderer
  */
 data class AttributeRow(
     val key: String,
-    val foreground: Color?,
-    val background: Color?,
-    val effectColor: Color?,
-    val effects: String,
-    val bold: Boolean,
-    val italic: Boolean
+    var foreground: Color?,
+    var background: Color?,
+    var effectColor: Color?,
+    var effects: String,
+    var bold: Boolean,
+    var italic: Boolean
 )
+
+/**
+ * Cell editor for color columns using ColorChooser.
+ */
+private class ColorCellEditor : AbstractCellEditor(), TableCellEditor {
+    private var currentColor: Color? = null
+
+    override fun getCellEditorValue(): Any? = currentColor
+
+    override fun getTableCellEditorComponent(
+        table: JTable,
+        value: Any?,
+        isSelected: Boolean,
+        row: Int,
+        column: Int
+    ): Component {
+        currentColor = value as? Color
+
+        // Show color chooser dialog
+        SwingUtilities.invokeLater {
+            val newColor = com.intellij.ui.ColorChooserService.instance.showDialog(
+                table,
+                "Choose Color",
+                currentColor,
+                true,
+                emptyList(),
+                true
+            )
+            if (newColor != null) {
+                currentColor = newColor
+                stopCellEditing()
+            } else {
+                cancelCellEditing()
+            }
+        }
+
+        // Return a temporary component (won't be visible long)
+        return JLabel()
+    }
+}
+
+/**
+ * Cell editor for effect type dropdown.
+ */
+private class EffectCellEditor : AbstractCellEditor(), TableCellEditor {
+    private val comboBox = JComboBox<String>(
+        arrayOf(
+            "",
+            "LINE_UNDERSCORE",
+            "BOLD_LINE_UNDERSCORE",
+            "WAVE_UNDERSCORE",
+            "STRIKEOUT",
+            "BOLD_DOTTED_LINE"
+        )
+    ).apply {
+        // Stop editing immediately when selection changes
+        addActionListener {
+            stopCellEditing()
+        }
+    }
+
+    override fun getCellEditorValue(): Any = comboBox.selectedItem as String
+
+    override fun getTableCellEditorComponent(
+        table: JTable,
+        value: Any?,
+        isSelected: Boolean,
+        row: Int,
+        column: Int
+    ): Component {
+        comboBox.selectedItem = value as? String ?: ""
+        return comboBox
+    }
+}
+
+/**
+ * Cell editor for boolean columns using checkboxes.
+ */
+private class BooleanCellEditor : AbstractCellEditor(), TableCellEditor {
+    private val checkBox = JBCheckBox().apply {
+        horizontalAlignment = SwingConstants.CENTER
+        // Stop editing immediately when checkbox is clicked
+        addActionListener {
+            stopCellEditing()
+        }
+    }
+
+    override fun getCellEditorValue(): Any = checkBox.isSelected
+
+    override fun getTableCellEditorComponent(
+        table: JTable,
+        value: Any?,
+        isSelected: Boolean,
+        row: Int,
+        column: Int
+    ): Component {
+        checkBox.isSelected = value as? Boolean ?: false
+        return checkBox
+    }
+}
 
 /**
  * Column definitions for the table.
@@ -48,38 +146,113 @@ private class KeyColumn : ColumnInfo<AttributeRow, String>(PaletteerBundle.messa
     override fun valueOf(item: AttributeRow) = item.key
 }
 
-private class ForegroundColumn :
+private class ForegroundColumn(private val onUpdate: () -> Unit) :
     ColumnInfo<AttributeRow, Color?>(PaletteerBundle.message("toolWindow.lookup.table.foreground")) {
     override fun valueOf(item: AttributeRow) = item.foreground
     override fun getRenderer(item: AttributeRow?) = ColorCellRenderer()
+    override fun isCellEditable(item: AttributeRow?) = true
+    override fun getEditor(item: AttributeRow?): TableCellEditor = ColorCellEditor()
+    override fun setValue(item: AttributeRow, value: Color?) {
+        item.foreground = value
+        updateScheme(item)
+        onUpdate()
+    }
 }
 
-private class BackgroundColumn :
+private class BackgroundColumn(private val onUpdate: () -> Unit) :
     ColumnInfo<AttributeRow, Color?>(PaletteerBundle.message("toolWindow.lookup.table.background")) {
     override fun valueOf(item: AttributeRow) = item.background
     override fun getRenderer(item: AttributeRow?) = ColorCellRenderer()
+    override fun isCellEditable(item: AttributeRow?) = true
+    override fun getEditor(item: AttributeRow?): TableCellEditor = ColorCellEditor()
+    override fun setValue(item: AttributeRow, value: Color?) {
+        item.background = value
+        updateScheme(item)
+        onUpdate()
+    }
 }
 
-private class EffectColorColumn :
+private class EffectColorColumn(private val onUpdate: () -> Unit) :
     ColumnInfo<AttributeRow, Color?>(PaletteerBundle.message("toolWindow.lookup.table.effectColor")) {
     override fun valueOf(item: AttributeRow) = item.effectColor
     override fun getRenderer(item: AttributeRow?) = ColorCellRenderer()
+    override fun isCellEditable(item: AttributeRow?) = true
+    override fun getEditor(item: AttributeRow?): TableCellEditor = ColorCellEditor()
+    override fun setValue(item: AttributeRow, value: Color?) {
+        item.effectColor = value
+        updateScheme(item)
+        onUpdate()
+    }
 }
 
-private class EffectsColumn :
+private class EffectsColumn(private val onUpdate: () -> Unit) :
     ColumnInfo<AttributeRow, String>(PaletteerBundle.message("toolWindow.lookup.table.effects")) {
     override fun valueOf(item: AttributeRow) = item.effects
+    override fun isCellEditable(item: AttributeRow?) = true
+    override fun getEditor(item: AttributeRow?): TableCellEditor = EffectCellEditor()
+    override fun setValue(item: AttributeRow, value: String) {
+        item.effects = value
+        updateScheme(item)
+        onUpdate()
+    }
 }
 
-private class BoldColumn : ColumnInfo<AttributeRow, Boolean>(PaletteerBundle.message("toolWindow.lookup.table.bold")) {
+private class BoldColumn(private val onUpdate: () -> Unit) :
+    ColumnInfo<AttributeRow, Boolean>(PaletteerBundle.message("toolWindow.lookup.table.bold")) {
     override fun valueOf(item: AttributeRow) = item.bold
     override fun getRenderer(item: AttributeRow?) = BooleanCellRenderer()
+    override fun isCellEditable(item: AttributeRow?) = true
+    override fun getEditor(item: AttributeRow?): TableCellEditor = BooleanCellEditor()
+    override fun setValue(item: AttributeRow, value: Boolean) {
+        item.bold = value
+        updateScheme(item)
+        onUpdate()
+    }
 }
 
-private class ItalicColumn :
+private class ItalicColumn(private val onUpdate: () -> Unit) :
     ColumnInfo<AttributeRow, Boolean>(PaletteerBundle.message("toolWindow.lookup.table.italic")) {
     override fun valueOf(item: AttributeRow) = item.italic
     override fun getRenderer(item: AttributeRow?) = BooleanCellRenderer()
+    override fun isCellEditable(item: AttributeRow?) = true
+    override fun getEditor(item: AttributeRow?): TableCellEditor = BooleanCellEditor()
+    override fun setValue(item: AttributeRow, value: Boolean) {
+        item.italic = value
+        updateScheme(item)
+        onUpdate()
+    }
+}
+
+/**
+ * Updates the color scheme with the modified attribute row using ColorReplacementService.
+ */
+private fun updateScheme(item: AttributeRow) {
+    val scheme = EditorColorsManager.getInstance().globalScheme
+    val colorReplacementService = ColorReplacementService()
+
+    // Calculate font type from bold and italic flags
+    val fontType = (if (item.bold) Font.BOLD else 0) or (if (item.italic) Font.ITALIC else 0)
+
+    // Parse effect type from string
+    val effectType = when (item.effects) {
+        "LINE_UNDERSCORE" -> EffectType.LINE_UNDERSCORE
+        "BOLD_LINE_UNDERSCORE" -> EffectType.BOLD_LINE_UNDERSCORE
+        "WAVE_UNDERSCORE" -> EffectType.WAVE_UNDERSCORE
+        "STRIKEOUT" -> EffectType.STRIKEOUT
+        "BOLD_DOTTED_LINE" -> EffectType.BOLD_DOTTED_LINE
+        else -> null
+    }
+
+    // Update the attribute using the service (this will also force reload)
+    colorReplacementService.updateTextAttribute(
+        scheme,
+        item.key,
+        item.foreground,
+        item.background,
+        item.effectColor,
+        effectType,
+        fontType
+    )
 }
 
 /**
@@ -156,18 +329,8 @@ class LookupPanel : JBPanel<JBPanel<*>>() {
 
     val searchModel = SearchModel()
 
-    private val tableModel = ListTableModel<AttributeRow>(
-        arrayOf(
-            KeyColumn(),
-            ForegroundColumn(),
-            BackgroundColumn(),
-            EffectColorColumn(),
-            EffectsColumn(),
-            BoldColumn(),
-            ItalicColumn()
-        ),
-        mutableListOf()
-    )
+    private val tableModel: ListTableModel<AttributeRow>
+    private var resultsTable: TableView<AttributeRow>? = null
 
     private val searchField = object : SearchTextField("Paletteer.LookupPanel.SearchHistory") {
         private val maxHistorySize = 15
@@ -187,12 +350,26 @@ class LookupPanel : JBPanel<JBPanel<*>>() {
     init {
         layout = BorderLayout()
 
+        // Initialize table model with update callback
+        tableModel = ListTableModel<AttributeRow>(
+            arrayOf(
+                KeyColumn(),
+                ForegroundColumn { resultsTable?.repaint() },
+                BackgroundColumn { resultsTable?.repaint() },
+                EffectColorColumn { resultsTable?.repaint() },
+                EffectsColumn { resultsTable?.repaint() },
+                BoldColumn { resultsTable?.repaint() },
+                ItalicColumn { resultsTable?.repaint() }
+            ),
+            mutableListOf()
+        )
+
         // Controls panel using UI DSL
         val controlsPanel = createControlsPanel(searchModel)
         add(controlsPanel, BorderLayout.NORTH)
 
         // Results table
-        val resultsTable = createResultsTable()
+        resultsTable = createResultsTable()
         val scrollPane = JBScrollPane(resultsTable)
         add(scrollPane, BorderLayout.CENTER)
 
@@ -320,7 +497,7 @@ class LookupPanel : JBPanel<JBPanel<*>>() {
 
     private fun searchEditorColors(
         query: String,
-        scheme: com.intellij.openapi.editor.colors.EditorColorsScheme,
+        scheme: EditorColorsScheme,
         results: MutableList<AttributeRow>,
         useRegex: Boolean = false
     ) {
@@ -354,17 +531,6 @@ class LookupPanel : JBPanel<JBPanel<*>>() {
             }
         } else {
             text.contains(query, ignoreCase = true)
-        }
-    }
-
-    private fun deserializeEffect(effect: EffectType): String {
-        return when (effect) {
-            EffectType.BOLD_DOTTED_LINE -> "BOLD_DOTTED_LINE"
-            EffectType.BOLD_LINE_UNDERSCORE -> "BOLD_LINE_UNDERSCORE"
-            EffectType.STRIKEOUT -> "STRIKEOUT"
-            EffectType.WAVE_UNDERSCORE -> "WAVE_UNDERSCORE"
-            EffectType.LINE_UNDERSCORE -> "LINE_UNDERSCORE"
-            else -> ""
         }
     }
 }

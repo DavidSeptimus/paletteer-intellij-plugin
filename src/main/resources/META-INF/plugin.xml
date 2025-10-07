@@ -33,5 +33,10 @@
             <add-to-group group-id="EditorPopupMenu" anchor="last"/>
             <keyboard-shortcut first-keystroke="alt shift C" keymap="$default"/>
         </action>
+        <action id="com.github.davidseptimus.paletteerintellijplugin.action.OpenPaletteerToolWindowAction"
+                class="com.github.davidseptimus.paletteerintellijplugin.action.OpenPaletteerToolWindowAction"
+        >
+            <keyboard-shortcut first-keystroke="alt P" keymap="$default"/>
+        </action>
     </actions>
 </idea-plugin>
