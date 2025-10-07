@@ -11,4 +11,12 @@
     <extensions defaultExtensionNs="com.intellij">
         <toolWindow factoryClass="com.github.davidseptimus.paletteerintellijplugin.toolWindow.PaletteerToolWindowFactory" id="Paletteer"/>
     </extensions>
+    <actions resource-bundle="messages.paletteerBundle">
+        <action id="com.github.davidseptimus.paletteerintellijplugin.action.LookupTextAttributeAction"
+                class="com.github.davidseptimus.paletteerintellijplugin.action.LookupTextAttributeAction"
+        >
+            <add-to-group group-id="EditorPopupMenu" anchor="last"/>
+            <keyboard-shortcut first-keystroke="alt C" keymap="$default"/>
+        </action>
+    </actions>
 </idea-plugin>
