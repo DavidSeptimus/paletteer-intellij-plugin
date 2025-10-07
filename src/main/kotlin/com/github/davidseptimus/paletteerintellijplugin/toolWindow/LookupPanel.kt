@@ -16,6 +16,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.popup.JBPopupFactory
 import com.intellij.openapi.ui.popup.PopupStep
 import com.intellij.openapi.ui.popup.util.BaseListPopupStep
+import com.intellij.ui.ColorPicker
 import com.intellij.ui.components.fields.ExtendableTextComponent
 import com.intellij.ui.components.fields.ExtendableTextField
 import com.intellij.util.CommonProcessors
@@ -69,15 +70,15 @@ private class ColorCellEditor : AbstractCellEditor(), TableCellEditor {
     ): Component {
         currentColor = value as? Color
 
-        // Show color chooser dialog
+        // Show color picker dialog
         SwingUtilities.invokeLater {
-            val newColor = com.intellij.ui.ColorChooserService.instance.showDialog(
+            val newColor = ColorPicker.showDialog(
                 table,
-                "Choose Color",
+                PaletteerBundle.message("toolWindow.replace.pickColor"),
                 currentColor,
                 true,
-                emptyList(),
-                true
+                null,
+                false
             )
             if (newColor != null) {
                 currentColor = newColor
@@ -496,7 +497,7 @@ class LookupPanel(private val project: Project) : JBPanel<JBPanel<*>>() {
         val table = TableView(tableModel)
         table.setCellSelectionEnabled(true)
         table.inputMap.put(javax.swing.KeyStroke.getKeyStroke("meta C"), "copyCell")
-        table.actionMap.put("copyCell", object : javax.swing.AbstractAction() {
+        table.actionMap.put("copyCell", object : AbstractAction() {
             override fun actionPerformed(e: java.awt.event.ActionEvent?) {
                 val row = table.selectedRow
                 val col = table.selectedColumn
