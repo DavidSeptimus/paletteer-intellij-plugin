@@ -55,7 +55,7 @@ class PaletteerToolWindow(private val project: Project, initialVertical: Boolean
             isVertical = vertical
             splitter.orientation = isVertical
             splitter.proportion = 0.9f
-            splitter.firstComponent = LookupPanel()
+            splitter.firstComponent = LookupPanel(project)
             splitter.secondComponent = ReplacePanel(project)
             splitter.revalidate()
             splitter.repaint()
@@ -70,7 +70,7 @@ class PaletteerToolWindow(private val project: Project, initialVertical: Boolean
             isVertical = !isVertical
             splitter.orientation = isVertical
             splitter.proportion = 0.9f
-            splitter.firstComponent = LookupPanel()
+            splitter.firstComponent = LookupPanel(project)
             splitter.secondComponent = ReplacePanel(project)
             splitter.revalidate()
             splitter.repaint()
@@ -84,7 +84,7 @@ class PaletteerToolWindow(private val project: Project, initialVertical: Boolean
         layout = BorderLayout()
 
         splitter = JBSplitter(isVertical, 0.9f).apply {
-            firstComponent = LookupPanel()
+            firstComponent = LookupPanel(project)
             secondComponent = ReplacePanel(project)
         }
 

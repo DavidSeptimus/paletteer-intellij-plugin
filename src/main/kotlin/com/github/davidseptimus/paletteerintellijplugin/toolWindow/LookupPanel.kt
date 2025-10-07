@@ -1,12 +1,22 @@
 package com.github.davidseptimus.paletteerintellijplugin.toolWindow
 
 import com.github.davidseptimus.paletteerintellijplugin.PaletteerBundle
+import com.intellij.icons.AllIcons
+import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.colors.EditorColorsManager
 import com.intellij.openapi.editor.colors.EditorColorsScheme
 import com.intellij.openapi.editor.colors.TextAttributesKey
+import com.intellij.openapi.editor.event.CaretEvent
+import com.intellij.openapi.editor.event.CaretListener
+import com.intellij.openapi.editor.ex.RangeHighlighterEx
+import com.intellij.openapi.editor.impl.EditorImpl
 import com.intellij.openapi.editor.markup.EffectType
+import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.project.Project
+import com.intellij.ui.components.fields.ExtendableTextComponent
+import com.intellij.ui.components.fields.ExtendableTextField
+import com.intellij.util.CommonProcessors
 import com.intellij.ui.JBColor
-import com.intellij.ui.SearchTextField
 import com.intellij.ui.components.JBCheckBox
 import com.intellij.ui.components.JBPanel
 import com.intellij.ui.components.JBScrollPane
@@ -323,28 +333,78 @@ private class BooleanCellRenderer : TableCellRenderer {
 }
 
 /**
+ * Custom extension that supports selected state with different icons
+ */
+private class SelectableExtension(
+    private val normalIcon: Icon,
+    private val selectedIcon: Icon,
+    private val tooltip: String,
+    private val action: () -> Unit,
+    private val isSelectedProvider: () -> Boolean
+) : ExtendableTextComponent.Extension {
+
+    override fun getIcon(hovered: Boolean): Icon {
+        return if (isSelected()) selectedIcon else normalIcon
+    }
+
+    override fun isSelected(): Boolean {
+        return isSelectedProvider()
+    }
+
+    override fun getTooltip(): String = tooltip
+
+    override fun getActionOnClick(): Runnable = Runnable { action() }
+
+    override fun isIconBeforeText(): Boolean = false
+}
+
+/**
  * Panel for searching and displaying text attributes and editor colors.
  */
-class LookupPanel : JBPanel<JBPanel<*>>() {
+class LookupPanel(private val project: Project) : JBPanel<JBPanel<*>>() {
 
     val searchModel = SearchModel()
 
     private val tableModel: ListTableModel<AttributeRow>
     private var resultsTable: TableView<AttributeRow>? = null
+    private var caretListener: CaretListener? = null
+    private var currentEditor: Editor? = null
 
-    private val searchField = object : SearchTextField("Paletteer.LookupPanel.SearchHistory") {
-        private val maxHistorySize = 15
+    private val searchField = ExtendableTextField().apply {
+        emptyText.text = PaletteerBundle.message("toolWindow.lookup.searchPlaceholder")
 
-        override fun addCurrentTextToHistory() {
-            super.addCurrentTextToHistory()
-            // Trim history to max size
-            val history = history.toMutableList()
-            if (history.size > maxHistorySize) {
-                setHistory(history.takeLast(maxHistorySize))
-            }
-        }
-    }.apply {
-        textEditor.emptyText.text = PaletteerBundle.message("toolWindow.lookup.searchPlaceholder")
+        // Create the use regex extension button
+        val useRegexExtension = SelectableExtension(
+            AllIcons.Actions.Regex,
+            AllIcons.Actions.RegexSelected,
+            PaletteerBundle.message("toolWindow.lookup.useRegex"),
+            {
+                searchModel.useRegex = !searchModel.useRegex
+                repaint()
+                performSearch(text)
+            },
+            { searchModel.useRegex }
+        )
+
+        // Create the follow caret extension button
+        val followCaretExtension = SelectableExtension(
+            AllIcons.General.Pin,
+            AllIcons.General.PinSelected,
+            PaletteerBundle.message("toolWindow.lookup.followCaret"),
+            {
+                searchModel.followCaret = !searchModel.followCaret
+                repaint()
+                if (searchModel.followCaret) {
+                    setupCaretListener()
+                } else {
+                    removeCaretListener()
+                }
+            },
+            { searchModel.followCaret }
+        )
+
+        addExtension(useRegexExtension)
+        addExtension(followCaretExtension)
     }
 
     init {
@@ -385,14 +445,6 @@ class LookupPanel : JBPanel<JBPanel<*>>() {
             cell(searchField)
                 .resizableColumn()
                 .align(AlignX.FILL)
-        }
-
-        row {
-            checkBox(PaletteerBundle.message("toolWindow.lookup.useRegex"))
-                .onChanged { checkbox ->
-                    searchModel.useRegex = checkbox.isSelected
-                    performSearch(searchField.text)
-                }
         }
 
         buttonsGroup {
@@ -442,7 +494,7 @@ class LookupPanel : JBPanel<JBPanel<*>>() {
 
     private fun setupSearchField() {
         // Search on text change
-        searchField.addDocumentListener(object : DocumentListener {
+        searchField.document.addDocumentListener(object : DocumentListener {
             override fun insertUpdate(e: DocumentEvent?) = performSearch(searchField.text)
             override fun removeUpdate(e: DocumentEvent?) = performSearch(searchField.text)
             override fun changedUpdate(e: DocumentEvent?) = performSearch(searchField.text)
@@ -533,10 +585,74 @@ class LookupPanel : JBPanel<JBPanel<*>>() {
             text.contains(query, ignoreCase = true)
         }
     }
+
+    private fun setupCaretListener() {
+        removeCaretListener()
+
+        val editor = FileEditorManager.getInstance(project).selectedTextEditor ?: return
+        currentEditor = editor
+
+        caretListener = object : CaretListener {
+            override fun caretPositionChanged(event: CaretEvent) {
+                updateSearchFromCaret(editor)
+            }
+        }
+
+        editor.caretModel.addCaretListener(caretListener!!)
+        updateSearchFromCaret(editor)
+    }
+
+    private fun removeCaretListener() {
+        caretListener?.let { listener ->
+            currentEditor?.caretModel?.removeCaretListener(listener)
+        }
+        caretListener = null
+        currentEditor = null
+    }
+
+    private fun updateSearchFromCaret(editor: Editor) {
+        val offset = editor.caretModel.offset
+        val editorImpl = editor as? EditorImpl ?: return
+
+        val results = mutableListOf<String>()
+
+        // Process markup model
+        val editorModel = editorImpl.markupModel
+        val documentModel = editorImpl.filteredDocumentMarkupModel
+        val processor = CommonProcessors.CollectProcessor<RangeHighlighterEx>()
+
+        editorModel.processRangeHighlightersOverlappingWith(offset, offset + 1, processor)
+        documentModel.processRangeHighlightersOverlappingWith(offset, offset + 1, processor)
+
+        val highlighters = processor.results.sortedByDescending { it.layer }
+        for (highlighter in highlighters) {
+            val key = highlighter.textAttributesKey
+            if (key?.externalName != null && key.externalName != "IDENTIFIER_UNDER_CARET_ATTRIBUTES") {
+                results.add(key.externalName)
+            }
+        }
+
+        // Process syntax model
+        val iterator = editorImpl.highlighter.createIterator(offset)
+        if (!iterator.atEnd() && iterator.start <= offset && offset < iterator.end) {
+            val keys = iterator.textAttributesKeys
+            keys.forEach { key ->
+                if (key.externalName != "IDENTIFIER_UNDER_CARET_ATTRIBUTES") {
+                    results.add(key.externalName)
+                }
+            }
+        }
+
+        // Update search field with the first result
+        if (results.isNotEmpty()) {
+            searchField.text = results.first()
+        }
+    }
 }
 
 
 data class SearchModel(
     var useRegex: Boolean = false,
+    var followCaret: Boolean = false,
     var lookupTextAttributes: Boolean = true,
 )
