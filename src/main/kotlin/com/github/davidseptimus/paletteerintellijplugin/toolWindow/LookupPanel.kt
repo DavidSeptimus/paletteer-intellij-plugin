@@ -514,6 +514,24 @@ class LookupPanel(private val project: Project) : JBPanel<JBPanel<*>>() {
                 }
             }
         })
+
+        // Adjust column widths: key column widest, others shrink to fit
+        val columnModel = table.columnModel
+        if (columnModel.columnCount > 0) {
+            // Key column (first column)
+            columnModel.getColumn(0).preferredWidth = 300
+            columnModel.getColumn(0).minWidth = 150
+            columnModel.getColumn(0).maxWidth = 1000
+            columnModel.getColumn(0).resizable = true
+            // Other columns
+            for (i in 1 until columnModel.columnCount) {
+                columnModel.getColumn(i).preferredWidth = 60
+                columnModel.getColumn(i).minWidth = 40
+                columnModel.getColumn(i).maxWidth = 120
+                columnModel.getColumn(i).resizable = false
+            }
+        }
+
         return table
     }
 
