@@ -13,6 +13,9 @@ import com.intellij.openapi.editor.impl.EditorImpl
 import com.intellij.openapi.editor.markup.EffectType
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.ui.popup.JBPopupFactory
+import com.intellij.openapi.ui.popup.PopupStep
+import com.intellij.openapi.ui.popup.util.BaseListPopupStep
 import com.intellij.ui.components.fields.ExtendableTextComponent
 import com.intellij.ui.components.fields.ExtendableTextField
 import com.intellij.util.CommonProcessors
@@ -369,9 +372,25 @@ class LookupPanel(private val project: Project) : JBPanel<JBPanel<*>>() {
     private var resultsTable: TableView<AttributeRow>? = null
     private var caretListener: CaretListener? = null
     private var currentEditor: Editor? = null
+    private var historyDebounceTimer: Timer? = null
 
     private val searchField = ExtendableTextField().apply {
         emptyText.text = PaletteerBundle.message("toolWindow.lookup.searchPlaceholder")
+
+        // Create the search history extension button
+        val historyExtension = object : ExtendableTextComponent.Extension {
+            override fun getIcon(hovered: Boolean): Icon {
+                return if (SearchHistoryService.getInstance().getSearchHistory().isNotEmpty()) {
+                    AllIcons.Actions.SearchWithHistory
+                } else {
+                    AllIcons.Actions.Search
+                }
+            }
+
+            override fun getTooltip(): String = PaletteerBundle.message("toolWindow.lookup.searchHistory")
+            override fun getActionOnClick(): Runnable = Runnable { showSearchHistoryPopup() }
+            override fun isIconBeforeText(): Boolean = true
+        }
 
         // Create the use regex extension button
         val useRegexExtension = SelectableExtension(
@@ -380,6 +399,10 @@ class LookupPanel(private val project: Project) : JBPanel<JBPanel<*>>() {
             PaletteerBundle.message("toolWindow.lookup.useRegex"),
             {
                 searchModel.useRegex = !searchModel.useRegex
+                if (searchModel.useRegex) {
+                    searchModel.followCaret = false
+                    removeCaretListener()
+                }
                 repaint()
                 performSearch(text)
             },
@@ -388,13 +411,14 @@ class LookupPanel(private val project: Project) : JBPanel<JBPanel<*>>() {
 
         // Create the follow caret extension button
         val followCaretExtension = SelectableExtension(
-            AllIcons.General.Pin,
-            AllIcons.General.PinSelected,
+            AllIcons.Actions.RunToCursor,
+            AllIcons.Actions.RunToCursor,
             PaletteerBundle.message("toolWindow.lookup.followCaret"),
             {
                 searchModel.followCaret = !searchModel.followCaret
                 repaint()
                 if (searchModel.followCaret) {
+                    searchModel.useRegex = false
                     setupCaretListener()
                 } else {
                     removeCaretListener()
@@ -403,6 +427,7 @@ class LookupPanel(private val project: Project) : JBPanel<JBPanel<*>>() {
             { searchModel.followCaret }
         )
 
+        addExtension(historyExtension)
         addExtension(useRegexExtension)
         addExtension(followCaretExtension)
     }
@@ -495,10 +520,40 @@ class LookupPanel(private val project: Project) : JBPanel<JBPanel<*>>() {
     private fun setupSearchField() {
         // Search on text change
         searchField.document.addDocumentListener(object : DocumentListener {
-            override fun insertUpdate(e: DocumentEvent?) = performSearch(searchField.text)
-            override fun removeUpdate(e: DocumentEvent?) = performSearch(searchField.text)
-            override fun changedUpdate(e: DocumentEvent?) = performSearch(searchField.text)
+            override fun insertUpdate(e: DocumentEvent?) {
+                performSearch(searchField.text)
+                scheduleHistoryCapture(searchField.text)
+            }
+
+            override fun removeUpdate(e: DocumentEvent?) {
+                performSearch(searchField.text)
+                scheduleHistoryCapture(searchField.text)
+            }
+
+            override fun changedUpdate(e: DocumentEvent?) {
+                performSearch(searchField.text)
+                scheduleHistoryCapture(searchField.text)
+            }
         })
+    }
+
+    /**
+     * Schedule history capture after 2 seconds of no typing.
+     */
+    private fun scheduleHistoryCapture(query: String) {
+        // Cancel any existing timer
+        historyDebounceTimer?.stop()
+        historyDebounceTimer = null
+
+        // Only schedule if query is not blank and not following caret
+        if (query.isNotBlank() && !searchModel.followCaret) {
+            historyDebounceTimer = Timer(2000) {
+                SearchHistoryService.getInstance().addSearch(query)
+            }.apply {
+                isRepeats = false
+                start()
+            }
+        }
     }
 
     private fun performSearch(query: String) {
@@ -515,6 +570,51 @@ class LookupPanel(private val project: Project) : JBPanel<JBPanel<*>>() {
         // Sort results alphabetically by key (case-insensitive, nulls last)
         val sortedResults = results.sortedWith(compareBy({ it.key.lowercase() }, { it.key == null }))
         tableModel.items = sortedResults
+    }
+
+    /**
+     * Show popup with search history.
+     */
+    private fun showSearchHistoryPopup() {
+        val history = SearchHistoryService.getInstance().getSearchHistory()
+
+        if (history.isEmpty()) {
+            // Show empty state popup
+            val emptyPopup = JBPopupFactory.getInstance()
+                .createMessage(PaletteerBundle.message("toolWindow.lookup.searchHistory.empty"))
+            emptyPopup.showUnderneathOf(searchField)
+            return
+        }
+
+        // Add 'Clear history' entry at the top
+        val clearHistoryLabel = PaletteerBundle.message("toolWindow.lookup.searchHistory.clear")
+        val items = mutableListOf<String>()
+        items.add(clearHistoryLabel)
+        items.addAll(history)
+
+        val popupStep = object : BaseListPopupStep<String>(
+            PaletteerBundle.message("toolWindow.lookup.searchHistory"),
+            items
+        ) {
+            override fun onChosen(selectedValue: String?, finalChoice: Boolean): PopupStep<*>? {
+                if (finalChoice && selectedValue != null) {
+                    if (selectedValue == clearHistoryLabel) {
+                        SearchHistoryService.getInstance().clearHistory()
+                        return FINAL_CHOICE
+                    } else {
+                        searchField.text = selectedValue
+                        performSearch(selectedValue)
+                    }
+                }
+                return null
+            }
+
+            override fun hasSubstep(selectedValue: String?): Boolean = false
+            override fun isSpeedSearchEnabled(): Boolean = true
+        }
+
+        val popup = JBPopupFactory.getInstance().createListPopup(popupStep)
+        popup.showUnderneathOf(searchField)
     }
 
     private fun searchTextAttributes(
@@ -645,7 +745,11 @@ class LookupPanel(private val project: Project) : JBPanel<JBPanel<*>>() {
 
         // Update search field with the first result
         if (results.isNotEmpty()) {
-            searchField.text = results.first()
+            val newText = results.first()
+            searchField.text = newText
+            if (newText.isNotBlank()) {
+                SearchHistoryService.getInstance().addSearch(newText)
+            }
         }
     }
 }
