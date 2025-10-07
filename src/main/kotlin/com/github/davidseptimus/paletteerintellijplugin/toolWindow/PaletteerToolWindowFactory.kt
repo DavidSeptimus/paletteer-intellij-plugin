@@ -3,9 +3,11 @@ package com.github.davidseptimus.paletteerintellijplugin.toolWindow
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowFactory
+import com.intellij.ui.JBColor
 import com.intellij.ui.JBSplitter
 import com.intellij.ui.components.JBPanel
 import com.intellij.ui.content.ContentFactory
+import com.intellij.util.ui.JBSwingUtilities
 import java.awt.BorderLayout
 
 /**
@@ -38,6 +40,13 @@ class PaletteerToolWindow(private val project: Project) {
             secondComponent = ReplacePanel(project)
         }
 
-        add(splitter, BorderLayout.CENTER)
+        // Add padding around the splitter
+        val paddedPanel = JBPanel<JBPanel<*>>().apply {
+            layout = BorderLayout()
+            border = javax.swing.BorderFactory.createEmptyBorder(4, 4, 4, 4) // 4px padding on all sides
+            add(splitter, BorderLayout.CENTER)
+        }
+
+        add(paddedPanel, BorderLayout.CENTER)
     }
 }

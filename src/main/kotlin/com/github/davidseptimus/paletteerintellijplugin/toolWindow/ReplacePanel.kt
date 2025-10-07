@@ -6,7 +6,6 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
 import com.intellij.ui.ColorPicker
 import com.intellij.ui.JBColor
-import com.intellij.ui.components.JBPanel
 import com.intellij.ui.dsl.builder.Row
 import com.intellij.ui.dsl.builder.panel
 import java.awt.Color
@@ -152,6 +151,7 @@ class ReplacePanel(private val project: Project) : JPanel() {
             includeTextAttributes,
             includeEditorColors
         )
+        colorReplacementService.forceReloadScheme(scheme)
         Messages.showInfoMessage(
             project,
             PaletteerBundle.message("toolWindow.replace.success", replaced),

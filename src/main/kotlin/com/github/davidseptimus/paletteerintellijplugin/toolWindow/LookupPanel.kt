@@ -229,7 +229,30 @@ class LookupPanel : JBPanel<JBPanel<*>>() {
     }
 
 
-    private fun createResultsTable() = TableView(tableModel)
+    private fun createResultsTable(): TableView<AttributeRow> {
+        val table = TableView(tableModel)
+        table.setCellSelectionEnabled(true)
+        table.inputMap.put(javax.swing.KeyStroke.getKeyStroke("meta C"), "copyCell")
+        table.actionMap.put("copyCell", object : javax.swing.AbstractAction() {
+            override fun actionPerformed(e: java.awt.event.ActionEvent?) {
+                val row = table.selectedRow
+                val col = table.selectedColumn
+                if (row >= 0 && col >= 0) {
+                    val value = table.getValueAt(row, col)
+                    val text = when (value) {
+                        is Color -> String.format("%06X", value.rgb and 0xFFFFFF)
+                        is Boolean -> value.toString()
+                        null -> ""
+                        else -> value.toString()
+                    }
+                    val clipboard = java.awt.Toolkit.getDefaultToolkit().systemClipboard
+                    val selection = java.awt.datatransfer.StringSelection(text)
+                    clipboard.setContents(selection, selection)
+                }
+            }
+        })
+        return table
+    }
 
     private fun setupSearchField() {
         // Search on text change

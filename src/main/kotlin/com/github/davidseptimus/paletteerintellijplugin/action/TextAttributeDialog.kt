@@ -26,7 +26,6 @@ class TextAttributeDialog(
         val key: String?,
         val foreground: Color?,
         val background: Color?,
-        val font: String
     )
 
     init {
@@ -93,12 +92,6 @@ class TextAttributeDialog(
             attr.background
         ))
         panel.add(Box.createVerticalStrut(5))
-
-        // Font
-        panel.add(createLabelValueRow(
-            PaletteerBundle.message("lookup.dialog.font"),
-            attr.font
-        ))
 
         return panel
     }

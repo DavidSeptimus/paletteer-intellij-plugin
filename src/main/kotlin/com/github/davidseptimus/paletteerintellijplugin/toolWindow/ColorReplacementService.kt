@@ -99,5 +99,22 @@ class ColorReplacementService {
 
         return replacedCount
     }
-}
 
+    /**
+     * Force the editor to reload the color scheme and update all open editors.
+     * Should be called after making changes to a scheme.
+     * @param scheme The editor color scheme to reload
+     */
+    fun forceReloadScheme(scheme: EditorColorsScheme) {
+        val colorsManager = com.intellij.openapi.editor.colors.EditorColorsManager.getInstance()
+        colorsManager.setGlobalScheme(scheme)
+        // Refresh all open editors to apply the new scheme
+        val editorFactory = com.intellij.openapi.editor.EditorFactory.getInstance()
+        try {
+            val refreshMethod = editorFactory.javaClass.getMethod("refreshAllEditors")
+            refreshMethod.invoke(editorFactory)
+        } catch (e: NoSuchMethodException) {
+            // Fallback: close and reopen editors or notify listeners if needed
+        }
+    }
+}

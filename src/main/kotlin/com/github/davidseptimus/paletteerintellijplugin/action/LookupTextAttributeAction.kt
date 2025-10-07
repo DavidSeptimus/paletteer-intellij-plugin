@@ -88,11 +88,10 @@ class LookupTextAttributeAction : AnAction() {
                 if (schemeAttrs != null) {
                     results.add(TextAttributeDialog.AttributeInfo(
                         type = PaletteerBundle.message("lookup.dialog.type.markup"),
-                        text = text.toString(),
+                        text = text,
                         key = key?.externalName,
                         foreground = schemeAttrs.foregroundColor,
                         background = schemeAttrs.backgroundColor,
-                        font = getFontType(schemeAttrs.fontType)
                     ))
                 }
             }
@@ -120,19 +119,9 @@ class LookupTextAttributeAction : AnAction() {
                         key = key.externalName,
                         foreground = schemeAttrs.foregroundColor,
                         background = schemeAttrs.backgroundColor,
-                        font = getFontType(schemeAttrs.fontType)
                     ))
                 }
             }
-        }
-    }
-
-    private fun getFontType(fontType: Int): String {
-        return when {
-            fontType and java.awt.Font.BOLD != 0 && fontType and java.awt.Font.ITALIC != 0 -> "bold italic"
-            fontType and java.awt.Font.BOLD != 0 -> "bold"
-            fontType and java.awt.Font.ITALIC != 0 -> "italic"
-            else -> "plain"
         }
     }
 }
