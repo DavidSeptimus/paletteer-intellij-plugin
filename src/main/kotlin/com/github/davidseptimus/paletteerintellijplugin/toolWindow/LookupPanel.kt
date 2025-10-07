@@ -4,6 +4,7 @@ import com.github.davidseptimus.paletteerintellijplugin.PaletteerBundle
 import com.intellij.openapi.editor.colors.EditorColorsManager
 import com.intellij.openapi.editor.colors.EditorColorsScheme
 import com.intellij.openapi.editor.colors.TextAttributesKey
+import com.intellij.openapi.editor.markup.EffectType
 import com.intellij.openapi.ui.DialogPanel
 import com.intellij.ui.JBColor
 import com.intellij.ui.SearchTextField
@@ -34,6 +35,7 @@ data class AttributeRow(
     val key: String,
     val foreground: Color?,
     val background: Color?,
+    val effectColor: Color?,
     val effects: String,
     val bold: Boolean,
     val italic: Boolean
@@ -55,6 +57,12 @@ private class ForegroundColumn :
 private class BackgroundColumn :
     ColumnInfo<AttributeRow, Color?>(PaletteerBundle.message("toolWindow.lookup.table.background")) {
     override fun valueOf(item: AttributeRow) = item.background
+    override fun getRenderer(item: AttributeRow?) = ColorCellRenderer()
+}
+
+private class EffectColorColumn :
+    ColumnInfo<AttributeRow, Color?>(PaletteerBundle.message("toolWindow.lookup.table.effectColor")) {
+    override fun valueOf(item: AttributeRow) = item.effectColor
     override fun getRenderer(item: AttributeRow?) = ColorCellRenderer()
 }
 
@@ -153,6 +161,7 @@ class LookupPanel : JBPanel<JBPanel<*>>() {
             KeyColumn(),
             ForegroundColumn(),
             BackgroundColumn(),
+            EffectColorColumn(),
             EffectsColumn(),
             BoldColumn(),
             ItalicColumn()
@@ -289,12 +298,15 @@ class LookupPanel : JBPanel<JBPanel<*>>() {
             if (matchesSearch(keyName, query, useRegex)) {
                 val attrs = scheme.getAttributes(key)
                 if (attrs != null) {
+                    val effectColor = attrs.effectColor
+                    val effects = if (effectColor == null) "" else attrs.effectType?.toString() ?: ""
                     results.add(
                         AttributeRow(
                             key = keyName,
                             foreground = attrs.foregroundColor,
                             background = attrs.backgroundColor,
-                            effects = attrs.effectType?.toString() ?: "",
+                            effectColor = effectColor,
+                            effects = effects,
                             bold = attrs.fontType and 1 != 0,
                             italic = attrs.fontType and 2 != 0
                         )
@@ -320,6 +332,7 @@ class LookupPanel : JBPanel<JBPanel<*>>() {
                         key = keyName,
                         foreground = color,
                         background = null,
+                        effectColor = null,
                         effects = "",
                         bold = false,
                         italic = false
@@ -339,6 +352,17 @@ class LookupPanel : JBPanel<JBPanel<*>>() {
             }
         } else {
             text.contains(query, ignoreCase = true)
+        }
+    }
+
+    private fun deserializeEffect(effect: EffectType): String {
+        return when (effect) {
+            EffectType.BOLD_DOTTED_LINE -> "BOLD_DOTTED_LINE"
+            EffectType.BOLD_LINE_UNDERSCORE -> "BOLD_LINE_UNDERSCORE"
+            EffectType.STRIKEOUT -> "STRIKEOUT"
+            EffectType.WAVE_UNDERSCORE -> "WAVE_UNDERSCORE"
+            EffectType.LINE_UNDERSCORE -> "LINE_UNDERSCORE"
+            else -> ""
         }
     }
 }

@@ -10,11 +10,19 @@ import com.intellij.util.ui.JBUI
 import java.awt.BorderLayout
 import java.awt.Color
 import java.awt.Dimension
+import java.awt.Toolkit
+import java.awt.datatransfer.StringSelection
+import java.awt.event.MouseAdapter
+import java.awt.event.MouseEvent
 import javax.swing.BorderFactory
 import javax.swing.Box
 import javax.swing.BoxLayout
 import javax.swing.JComponent
+import javax.swing.JLabel
 import javax.swing.JPanel
+import javax.swing.JWindow
+import javax.swing.Timer
+import javax.swing.SwingUtilities
 
 class TextAttributeDialog(
     private val attributes: List<AttributeInfo>
@@ -138,10 +146,35 @@ class TextAttributeDialog(
                     minimumSize = Dimension(40, 20)
                     border = BorderFactory.createLineBorder(JBColor.border())
                 }
+                // Add mouse listener for clipboard copy
+                preview.addMouseListener(object : MouseAdapter() {
+                    override fun mouseClicked(e: MouseEvent?) {
+                        copyToClipboard(colorHex)
+                        showCopiedMessage(preview, "Copied: $colorHex")
+                    }
+                })
                 colorPanel.add(preview, BorderLayout.EAST)
             }
 
             add(colorPanel, BorderLayout.CENTER)
         }
+    }
+
+    private fun copyToClipboard(text: String) {
+        val clipboard = Toolkit.getDefaultToolkit().systemClipboard
+        val selection = StringSelection(text)
+        clipboard.setContents(selection, selection)
+    }
+
+    private fun showCopiedMessage(parent: JPanel, message: String) {
+        val window = JWindow(SwingUtilities.getWindowAncestor(parent))
+        val label = JLabel(message)
+        label.border = JBUI.Borders.empty(5)
+        window.add(label)
+        window.pack()
+        val location = parent.locationOnScreen
+        window.setLocation(location.x, location.y - window.height - 5)
+        window.isVisible = true
+        Timer(1200) { window.isVisible = false; window.dispose() }.start()
     }
 }

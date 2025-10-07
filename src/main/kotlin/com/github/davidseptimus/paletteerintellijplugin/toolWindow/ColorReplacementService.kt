@@ -107,7 +107,17 @@ class ColorReplacementService {
      */
     fun forceReloadScheme(scheme: EditorColorsScheme) {
         val colorsManager = com.intellij.openapi.editor.colors.EditorColorsManager.getInstance()
-        colorsManager.setGlobalScheme(scheme)
+        // If the scheme is bundled (read-only), clone and register as a new custom scheme
+        val modifiableScheme = if (scheme.isReadOnly) {
+            val clone = scheme.clone() as EditorColorsScheme
+            clone.name = scheme.name + " (Paletteer)"
+            colorsManager.addColorScheme(clone)
+            clone
+        } else {
+            colorsManager.addColorScheme(scheme)
+            scheme
+        }
+        colorsManager.setGlobalScheme(modifiableScheme)
         // Refresh all open editors to apply the new scheme
         val editorFactory = com.intellij.openapi.editor.EditorFactory.getInstance()
         try {
