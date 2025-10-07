@@ -9,7 +9,11 @@
     <resource-bundle>messages.paletteerBundle</resource-bundle>
 
     <extensions defaultExtensionNs="com.intellij">
-        <toolWindow factoryClass="com.github.davidseptimus.paletteerintellijplugin.toolWindow.PaletteerToolWindowFactory" id="Paletteer"/>
+        <toolWindow
+                factoryClass="com.github.davidseptimus.paletteerintellijplugin.toolWindow.PaletteerToolWindowFactory"
+                id="Paletteer"
+                anchor="bottom"
+        />
     </extensions>
     <actions resource-bundle="messages.paletteerBundle">
         <action id="com.github.davidseptimus.paletteerintellijplugin.action.LookupTextAttributeAction"
