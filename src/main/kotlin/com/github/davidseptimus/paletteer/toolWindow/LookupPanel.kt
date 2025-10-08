@@ -2,6 +2,7 @@ package com.github.davidseptimus.paletteer.toolWindow
 
 import com.github.davidseptimus.paletteer.PaletteerBundle
 import com.intellij.icons.AllIcons
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.colors.EditorColorsManager
 import com.intellij.openapi.editor.colors.EditorColorsScheme
@@ -12,6 +13,8 @@ import com.intellij.openapi.editor.ex.RangeHighlighterEx
 import com.intellij.openapi.editor.impl.EditorImpl
 import com.intellij.openapi.editor.markup.EffectType
 import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.fileEditor.FileEditorManagerEvent
+import com.intellij.openapi.fileEditor.FileEditorManagerListener
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.popup.JBPopupFactory
 import com.intellij.openapi.ui.popup.PopupStep
@@ -365,7 +368,7 @@ private class SelectableExtension(
 /**
  * Panel for searching and displaying text attributes and editor colors.
  */
-class LookupPanel(private val project: Project) : JBPanel<JBPanel<*>>() {
+class LookupPanel(private val project: Project) : JBPanel<JBPanel<*>>(), Disposable {
 
     val searchModel = SearchModel()
 
@@ -462,6 +465,9 @@ class LookupPanel(private val project: Project) : JBPanel<JBPanel<*>>() {
         // Setup search functionality
         setupSearchField()
 
+        // Setup file editor listener
+        setupFileEditorListener()
+
         // Initial search to populate table
         performSearch("")
     }
@@ -554,6 +560,21 @@ class LookupPanel(private val project: Project) : JBPanel<JBPanel<*>>() {
                 scheduleHistoryCapture(searchField.text)
             }
         })
+    }
+
+    private fun setupFileEditorListener() {
+        // Listen for file editor selection changes
+        project.messageBus.connect().subscribe(
+            FileEditorManagerListener.FILE_EDITOR_MANAGER,
+            object : FileEditorManagerListener {
+                override fun selectionChanged(event: FileEditorManagerEvent) {
+                    // If follow caret is enabled, update the listener to the new editor
+                    if (searchModel.followCaret) {
+                        setupCaretListener()
+                    }
+                }
+            }
+        )
     }
 
     /**
@@ -770,6 +791,22 @@ class LookupPanel(private val project: Project) : JBPanel<JBPanel<*>>() {
                 SearchHistoryService.getInstance().addSearch(newText)
             }
         }
+    }
+
+    /**
+     * Restores the caret listener if follow caret mode is enabled.
+     * Called when the tool window becomes visible.
+     */
+    fun restoreState() {
+        if (searchModel.followCaret) {
+            setupCaretListener()
+        }
+    }
+
+    override fun dispose() {
+        historyDebounceTimer?.stop()
+        historyDebounceTimer = null
+        removeCaretListener()
     }
 }
 

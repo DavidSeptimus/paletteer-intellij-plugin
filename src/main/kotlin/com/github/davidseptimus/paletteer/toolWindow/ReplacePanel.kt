@@ -1,6 +1,7 @@
 package com.github.davidseptimus.paletteer.toolWindow
 
 import com.github.davidseptimus.paletteer.PaletteerBundle
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.editor.colors.EditorColorsManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
@@ -16,7 +17,7 @@ import javax.swing.text.AbstractDocument
 /**
  * Panel for replacing colors in the editor color scheme, using IntelliJ UI DSL.
  */
-class ReplacePanel(private val project: Project) : JPanel() {
+class ReplacePanel(private val project: Project) : JPanel(), Disposable {
 
     private var originalColor: Color? = null
     private var replacementColor: Color? = null
@@ -157,5 +158,9 @@ class ReplacePanel(private val project: Project) : JPanel() {
             PaletteerBundle.message("toolWindow.replace.success", replaced),
             PaletteerBundle.message("toolWindow.replace.success.title")
         )
+    }
+
+    override fun dispose() {
+        // No resources to clean up
     }
 }

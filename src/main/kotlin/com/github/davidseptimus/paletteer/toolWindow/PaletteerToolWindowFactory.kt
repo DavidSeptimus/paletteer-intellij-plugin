@@ -5,6 +5,7 @@ import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowAnchor
 import com.intellij.openapi.wm.ToolWindowFactory
@@ -21,13 +22,18 @@ import java.awt.BorderLayout
 class PaletteerToolWindowFactory : ToolWindowFactory {
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
         val isVerticalDefault = toolWindow.anchor != ToolWindowAnchor.BOTTOM
-        val paletteerToolWindow = PaletteerToolWindow(project, isVerticalDefault)
+        val paletteerToolWindow = PaletteerToolWindow(project, isVerticalDefault, toolWindow)
         val content = ContentFactory.getInstance().createContent(paletteerToolWindow.getContent(), null, false)
+
+        // Register panels as disposables with the content
+        Disposer.register(content, paletteerToolWindow.lookupPanel)
+        Disposer.register(content, paletteerToolWindow.replacePanel)
+
         toolWindow.contentManager.addContent(content)
         toolWindow.setTitleActions(listOf(paletteerToolWindow.toggleLayoutAction))
 
         var lastAnchor = toolWindow.anchor
-        val connection = project.messageBus.connect()
+        val connection = project.messageBus.connect(content)
         connection.subscribe(ToolWindowManagerListener.TOPIC, object : ToolWindowManagerListener {
             override fun stateChanged(toolWindowManager: ToolWindowManager) {
                 val currentAnchor = toolWindow.anchor
@@ -35,6 +41,11 @@ class PaletteerToolWindowFactory : ToolWindowFactory {
                     val shouldBeVertical = currentAnchor != ToolWindowAnchor.BOTTOM
                     paletteerToolWindow.setLayout(shouldBeVertical)
                     lastAnchor = currentAnchor
+                }
+
+                // Restore state when tool window becomes visible
+                if (toolWindow.isVisible) {
+                    paletteerToolWindow.lookupPanel.restoreState()
                 }
             }
         })
@@ -46,17 +57,31 @@ class PaletteerToolWindowFactory : ToolWindowFactory {
 /**
  * Main tool window that coordinates the lookup and replace panels.
  */
-class PaletteerToolWindow(private val project: Project, initialVertical: Boolean) {
+class PaletteerToolWindow(private val project: Project, initialVertical: Boolean, private val toolWindow: ToolWindow) {
     private var isVertical = initialVertical
     private lateinit var splitter: JBSplitter
+
+    var lookupPanel: LookupPanel = LookupPanel(project)
+        private set
+    var replacePanel: ReplacePanel = ReplacePanel(project)
+        private set
 
     fun setLayout(vertical: Boolean) {
         if (isVertical != vertical) {
             isVertical = vertical
             splitter.orientation = isVertical
             splitter.proportion = 0.9f
-            splitter.firstComponent = LookupPanel(project)
-            splitter.secondComponent = ReplacePanel(project)
+
+            // Dispose old panels
+            Disposer.dispose(lookupPanel)
+            Disposer.dispose(replacePanel)
+
+            // Create new panels
+            lookupPanel = LookupPanel(project)
+            replacePanel = ReplacePanel(project)
+
+            splitter.firstComponent = lookupPanel
+            splitter.secondComponent = replacePanel
             splitter.revalidate()
             splitter.repaint()
         }
@@ -70,8 +95,17 @@ class PaletteerToolWindow(private val project: Project, initialVertical: Boolean
             isVertical = !isVertical
             splitter.orientation = isVertical
             splitter.proportion = 0.9f
-            splitter.firstComponent = LookupPanel(project)
-            splitter.secondComponent = ReplacePanel(project)
+
+            // Dispose old panels
+            Disposer.dispose(lookupPanel)
+            Disposer.dispose(replacePanel)
+
+            // Create new panels
+            lookupPanel = LookupPanel(project)
+            replacePanel = ReplacePanel(project)
+
+            splitter.firstComponent = lookupPanel
+            splitter.secondComponent = replacePanel
             splitter.revalidate()
             splitter.repaint()
         }
@@ -84,8 +118,8 @@ class PaletteerToolWindow(private val project: Project, initialVertical: Boolean
         layout = BorderLayout()
 
         splitter = JBSplitter(isVertical, 0.9f).apply {
-            firstComponent = LookupPanel(project)
-            secondComponent = ReplacePanel(project)
+            firstComponent = lookupPanel
+            secondComponent = replacePanel
         }
 
         val paddedPanel = JBPanel<JBPanel<*>>().apply {
