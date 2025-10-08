@@ -1,5 +1,6 @@
 package com.github.davidseptimus.paletteer.toolWindow
 
+import com.github.davidseptimus.paletteer.PaletteerBundle
 import com.intellij.icons.AllIcons
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnAction
@@ -14,6 +15,8 @@ import com.intellij.openapi.wm.ex.ToolWindowManagerListener
 import com.intellij.ui.JBSplitter
 import com.intellij.ui.components.JBPanel
 import com.intellij.ui.content.ContentFactory
+import com.intellij.ui.content.ContentManagerEvent
+import com.intellij.ui.content.ContentManagerListener
 import java.awt.BorderLayout
 
 /**
@@ -21,19 +24,26 @@ import java.awt.BorderLayout
  */
 class PaletteerToolWindowFactory : ToolWindowFactory {
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
+        val contentFactory = ContentFactory.getInstance()
+
+        // Create Color Theme tab
         val isVerticalDefault = toolWindow.anchor != ToolWindowAnchor.BOTTOM
         val paletteerToolWindow = PaletteerToolWindow(project, isVerticalDefault, toolWindow)
-        val content = ContentFactory.getInstance().createContent(paletteerToolWindow.getContent(), null, false)
+        val colorThemeContent = contentFactory.createContent(
+            paletteerToolWindow.getContent(),
+            PaletteerBundle.message("toolWindow.tab.colorTheme"),
+            false
+        )
 
         // Register panels as disposables with the content
-        Disposer.register(content, paletteerToolWindow.lookupPanel)
-        Disposer.register(content, paletteerToolWindow.replacePanel)
+        Disposer.register(colorThemeContent, paletteerToolWindow.lookupPanel)
+        Disposer.register(colorThemeContent, paletteerToolWindow.replacePanel)
 
-        toolWindow.contentManager.addContent(content)
+        toolWindow.contentManager.addContent(colorThemeContent)
         toolWindow.setTitleActions(listOf(paletteerToolWindow.toggleLayoutAction))
 
         var lastAnchor = toolWindow.anchor
-        val connection = project.messageBus.connect(content)
+        val connection = project.messageBus.connect(colorThemeContent)
         connection.subscribe(ToolWindowManagerListener.TOPIC, object : ToolWindowManagerListener {
             override fun stateChanged(toolWindowManager: ToolWindowManager) {
                 val currentAnchor = toolWindow.anchor
@@ -44,7 +54,27 @@ class PaletteerToolWindowFactory : ToolWindowFactory {
                 }
 
                 // Restore state when tool window becomes visible
-                if (toolWindow.isVisible) {
+                if (toolWindow.isVisible && toolWindow.contentManager.selectedContent == colorThemeContent) {
+                    paletteerToolWindow.lookupPanel.restoreState()
+                }
+            }
+        })
+
+        // Create Export tab
+        val exportPanel = ExportPanel(project)
+        val exportContent = contentFactory.createContent(
+            exportPanel,
+            PaletteerBundle.message("toolWindow.tab.export"),
+            false
+        )
+        Disposer.register(exportContent, exportPanel)
+        toolWindow.contentManager.addContent(exportContent)
+
+        // Listen for tab selection changes
+        toolWindow.contentManager.addContentManagerListener(object : ContentManagerListener {
+            override fun selectionChanged(event: ContentManagerEvent) {
+                // Restore state when Color Theme tab is selected
+                if (event.content == colorThemeContent && event.content.isSelected) {
                     paletteerToolWindow.lookupPanel.restoreState()
                 }
             }
