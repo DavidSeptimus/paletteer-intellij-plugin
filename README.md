@@ -1,4 +1,5 @@
-# Paletteer (IntelliJ Plugin)
+# <img src="src/main/resources/META-INF/pluginIcon.svg" alt="Paletteer Icon" width="24" height="24" /> Paletteer (IntelliJ Plugin)
+
 
 [//]: # ()
 
