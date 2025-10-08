@@ -1,35 +1,63 @@
-/# paletteer-intellij-plugin
+# Paletteer (IntelliJ Plugin)
 
-![Build](https://github.com/DavidSeptimus/paletteer-intellij-plugin/workflows/Build/badge.svg)
-[![Version](https://img.shields.io/jetbrains/plugin/v/MARKETPLACE_ID.svg)](https://plugins.jetbrains.com/plugin/MARKETPLACE_ID)
-[![Downloads](https://img.shields.io/jetbrains/plugin/d/MARKETPLACE_ID.svg)](https://plugins.jetbrains.com/plugin/MARKETPLACE_ID)
+[//]: # ()
 
-## Template ToDo list
-- [x] Create a new [IntelliJ Platform Plugin Template][template] project.
-- [ ] Get familiar with the [template documentation][template].
-- [ ] Adjust the [pluginGroup](./gradle.properties) and [pluginName](./gradle.properties), as well as the [id](./src/main/resources/META-INF/plugin.xml) and [sources package](./src/main/kotlin).
-- [ ] Adjust the plugin description in `README` (see [Tips][docs:plugin-description])
-- [ ] Review the [Legal Agreements](https://plugins.jetbrains.com/docs/marketplace/legal-agreements.html?from=IJPluginTemplate).
-- [ ] [Publish a plugin manually](https://plugins.jetbrains.com/docs/intellij/publishing-plugin.html?from=IJPluginTemplate) for the first time.
-- [ ] Set the `MARKETPLACE_ID` in the above README badges. You can obtain it once the plugin is published to JetBrains Marketplace.
-- [ ] Set the [Plugin Signing](https://plugins.jetbrains.com/docs/intellij/plugin-signing.html?from=IJPluginTemplate) related [secrets](https://github.com/JetBrains/intellij-platform-plugin-template#environment-variables).
-- [ ] Set the [Deployment Token](https://plugins.jetbrains.com/docs/marketplace/plugin-upload.html?from=IJPluginTemplate).
-- [ ] Click the <kbd>Watch</kbd> button on the top of the [IntelliJ Platform Plugin Template][template] to be notified about releases containing new features and fixes.
-- [ ] Configure the [CODECOV_TOKEN](https://docs.codecov.com/docs/quick-start) secret for automated test coverage reports on PRs
+[//]: # (![Build]&#40;https://github.com/DavidSeptimus/paletteer-intellij-plugin/workflows/Build/badge.svg&#41;)
+
+[//]: # ([![Version]&#40;https://img.shields.io/jetbrains/plugin/v/MARKETPLACE_ID.svg&#41;]&#40;https://plugins.jetbrains.com/plugin/MARKETPLACE_ID&#41;)
+
+[//]: # ([![Downloads]&#40;https://img.shields.io/jetbrains/plugin/d/MARKETPLACE_ID.svg&#41;]&#40;https://plugins.jetbrains.com/plugin/MARKETPLACE_ID&#41;)
+
+[//]: # ()
+[//]: # (## Template ToDo list)
+
+[//]: # (- [x] Create a new [IntelliJ Platform Plugin Template][template] project.)
+
+[//]: # (- [ ] Get familiar with the [template documentation][template].)
+
+[//]: # (- [ ] Adjust the [pluginGroup]&#40;./gradle.properties&#41; and [pluginName]&#40;./gradle.properties&#41;, as well as the [id]&#40;./src/main/resources/META-INF/plugin.xml&#41; and [sources package]&#40;./src/main/kotlin&#41;.)
+
+[//]: # (- [ ] Adjust the plugin description in `README` &#40;see [Tips][docs:plugin-description]&#41;)
+
+[//]: # (- [ ] Review the [Legal Agreements]&#40;https://plugins.jetbrains.com/docs/marketplace/legal-agreements.html?from=IJPluginTemplate&#41;.)
+
+[//]: # (- [ ] [Publish a plugin manually]&#40;https://plugins.jetbrains.com/docs/intellij/publishing-plugin.html?from=IJPluginTemplate&#41; for the first time.)
+
+[//]: # (- [ ] Set the `MARKETPLACE_ID` in the above README badges. You can obtain it once the plugin is published to JetBrains Marketplace.)
+
+[//]: # (- [ ] Set the [Plugin Signing]&#40;https://plugins.jetbrains.com/docs/intellij/plugin-signing.html?from=IJPluginTemplate&#41; related [secrets]&#40;https://github.com/JetBrains/intellij-platform-plugin-template#environment-variables&#41;.)
+
+[//]: # (- [ ] Set the [Deployment Token]&#40;https://plugins.jetbrains.com/docs/marketplace/plugin-upload.html?from=IJPluginTemplate&#41;.)
+
+[//]: # (- [ ] Click the <kbd>Watch</kbd> button on the top of the [IntelliJ Platform Plugin Template][template] to be notified about releases containing new features and fixes.)
+
+[//]: # (- [ ] Configure the [CODECOV_TOKEN]&#40;https://docs.codecov.com/docs/quick-start&#41; secret for automated test coverage reports on PRs)
 
 <!-- Plugin description -->
-This Fancy IntelliJ Platform Plugin is going to be your implementation of the brilliant ideas that you have.
+Paletteer is an IntelliJ plugin that provides tools for theme developers to rapidly iterate on color themes within the IDE.
 
-This specific section is a source for the [plugin.xml](/src/main/resources/META-INF/plugin.xml) file which will be extracted by the [Gradle](/build.gradle.kts) during the build process.
+### Features
 
-To keep everything working, do not remove `<!-- ... -->` sections. 
+- Color and Text Attribute Lookup: Quickly filter and find colors or text attributes by name, including regex-based filtering.
+- 1-click text attribute updates: Easily update text attributes with a single click from the lookup table.
+- Instant text attribute lookup on caret position: Automatically see the text attribute at the caret position.
+- Bulk color replacement: Replace all instances of a specific color in the current color scheme with a new color.
+- Context menu actions:
+  - View all highlights for the caret position (click a color preview to copy it to the clipboard).
+- Hotkey actions:
+  - Show all highlights for the caret position (`alt+shift+c`).
+  - Copy color under caret to clipboard (`alt+c`).
+- Improved color scheme export:
+  - Optional font settings export.
+  - Configurable scheme name and file extension, so you don't need to rename the exported file every time.
+  - Success notification with a link to the exported file.
 <!-- Plugin description end -->
 
 ## Installation
 
 - Using the IDE built-in plugin system:
   
-  <kbd>Settings/Preferences</kbd> > <kbd>Plugins</kbd> > <kbd>Marketplace</kbd> > <kbd>Search for "paletteer-intellij-plugin"</kbd> >
+  <kbd>Settings/Preferences</kbd> > <kbd>Plugins</kbd> > <kbd>Marketplace</kbd> > <kbd>Search for "Paletteer"</kbd> >
   <kbd>Install</kbd>
   
 - Using JetBrains Marketplace:
