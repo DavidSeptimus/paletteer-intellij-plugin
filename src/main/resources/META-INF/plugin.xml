@@ -1,6 +1,6 @@
 <!-- Plugin Configuration File. Read more: https://plugins.jetbrains.com/docs/intellij/plugin-configuration-file.html -->
 <idea-plugin>
-    <id>com.github.davidseptimus.paletteerintellijplugin</id>
+    <id>com.github.davidseptimus.paletteer</id>
     <name>Paletteer</name>
     <vendor>davidseptimus</vendor>
 
@@ -9,11 +9,13 @@
     <resource-bundle>messages.paletteerBundle</resource-bundle>
 
     <extensions defaultExtensionNs="com.intellij">
+        <iconMapper mappingFile="PaletteerIconMappings.json"/>
+
         <toolWindow
-                factoryClass="com.github.davidseptimus.paletteerintellijplugin.toolWindow.PaletteerToolWindowFactory"
+                factoryClass="com.github.davidseptimus.paletteer.toolWindow.PaletteerToolWindowFactory"
                 id="Paletteer"
                 anchor="bottom"
-                icon="AllIcons.Toolwindows.ToolWindowPalette"
+                icon="com.github.davidseptimus.paletteer.ComposeIcons.PaletteerToolWindow"
         />
         <notificationGroup id="Paletteer Notifications"
                            displayType="BALLOON"
@@ -21,20 +23,20 @@
                            key="notification.group.paletteer.notifications"/>
     </extensions>
     <actions resource-bundle="messages.paletteerBundle">
-        <action id="com.github.davidseptimus.paletteerintellijplugin.action.LookupTextAttributeAction"
-                class="com.github.davidseptimus.paletteerintellijplugin.action.LookupTextAttributeAction"
+        <action id="com.github.davidseptimus.paletteer.action.LookupTextAttributeAction"
+                class="com.github.davidseptimus.paletteer.action.LookupTextAttributeAction"
         >
             <add-to-group group-id="EditorPopupMenu" anchor="last"/>
             <keyboard-shortcut first-keystroke="alt C" keymap="$default"/>
         </action>
-        <action id="com.github.davidseptimus.paletteerintellijplugin.action.CopyHighlightForegroundAction"
-                class="com.github.davidseptimus.paletteerintellijplugin.action.CopyHighlightForegroundAction"
+        <action id="com.github.davidseptimus.paletteer.action.CopyHighlightForegroundAction"
+                class="com.github.davidseptimus.paletteer.action.CopyHighlightForegroundAction"
         >
             <add-to-group group-id="EditorPopupMenu" anchor="last"/>
             <keyboard-shortcut first-keystroke="alt shift C" keymap="$default"/>
         </action>
-        <action id="com.github.davidseptimus.paletteerintellijplugin.action.OpenPaletteerToolWindowAction"
-                class="com.github.davidseptimus.paletteerintellijplugin.action.OpenPaletteerToolWindowAction"
+        <action id="com.github.davidseptimus.paletteer.action.OpenPaletteerToolWindowAction"
+                class="com.github.davidseptimus.paletteer.action.OpenPaletteerToolWindowAction"
         >
             <keyboard-shortcut first-keystroke="alt P" keymap="$default"/>
         </action>

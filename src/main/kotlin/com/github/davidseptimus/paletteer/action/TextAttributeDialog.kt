@@ -1,6 +1,6 @@
-package com.github.davidseptimus.paletteerintellijplugin.action
+package com.github.davidseptimus.paletteer.action
 
-import com.github.davidseptimus.paletteerintellijplugin.PaletteerBundle
+import com.github.davidseptimus.paletteer.PaletteerBundle
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.ui.JBColor
 import com.intellij.ui.components.JBLabel

@@ -1,0 +1,9 @@
+{
+  "icons": {
+    "expui": {
+      "toolwindow": {
+        "paletteer.svg": "icons/expui/toolwindow/paletteer.svg"
+      }
+    }
+  }
+}

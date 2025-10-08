@@ -1,7 +1,6 @@
-package com.github.davidseptimus.paletteerintellijplugin.action
+package com.github.davidseptimus.paletteer.action
 
-import com.github.davidseptimus.paletteerintellijplugin.PaletteerNotifier
-import com.intellij.notification.NotificationType
+import com.github.davidseptimus.paletteer.PaletteerNotifier
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys

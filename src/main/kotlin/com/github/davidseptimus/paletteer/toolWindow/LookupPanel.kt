@@ -1,6 +1,6 @@
-package com.github.davidseptimus.paletteerintellijplugin.toolWindow
+package com.github.davidseptimus.paletteer.toolWindow
 
-import com.github.davidseptimus.paletteerintellijplugin.PaletteerBundle
+import com.github.davidseptimus.paletteer.PaletteerBundle
 import com.intellij.icons.AllIcons
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.colors.EditorColorsManager

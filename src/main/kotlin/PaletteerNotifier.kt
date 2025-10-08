@@ -1,4 +1,4 @@
-package com.github.davidseptimus.paletteerintellijplugin
+package com.github.davidseptimus.paletteer
 
 import com.intellij.notification.NotificationGroupManager
 import com.intellij.notification.NotificationType

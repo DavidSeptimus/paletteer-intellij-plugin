@@ -1,4 +1,4 @@
-package com.github.davidseptimus.paletteerintellijplugin.toolWindow
+package com.github.davidseptimus.paletteer.toolWindow
 
 import com.intellij.openapi.editor.colors.EditorColorsScheme
 import com.intellij.openapi.editor.colors.TextAttributesKey

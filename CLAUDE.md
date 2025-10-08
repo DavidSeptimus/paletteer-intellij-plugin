@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is an IntelliJ Platform plugin project based on the IntelliJ Platform Plugin Template. The plugin is currently in initial template state with placeholder components that demonstrate the plugin architecture.
 
-**Plugin ID**: `com.github.davidseptimus.paletteerintellijplugin`
+**Plugin ID**: `com.github.davidseptimus.paletteer`
 **Target Platform**: IntelliJ IDEA Community Edition (IC) 2024.3.6
 **Minimum Build**: 243
 **Language**: Kotlin with JVM toolchain 21
@@ -77,7 +77,7 @@ When adapting this template for actual plugin functionality:
 1. Update `pluginGroup`, `pluginName`, and `pluginVersion` in `gradle.properties`
 2. Update plugin `<id>` and `<name>` in `src/main/resources/META-INF/plugin.xml`
 3. Update plugin description in `README.md` between the special comment markers
-4. Rename package structure from `com.github.davidseptimus.paletteerintellijplugin`
+4. Rename package structure from `com.github.davidseptimus.paletteer`
 5. Remove/replace template components (all contain warning logs about removing sample code)
 
 ### Extension Points

@@ -1,6 +1,6 @@
-package com.github.davidseptimus.paletteerintellijplugin.action
+package com.github.davidseptimus.paletteer.action
 
-import com.github.davidseptimus.paletteerintellijplugin.PaletteerBundle
+import com.github.davidseptimus.paletteer.PaletteerBundle
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys

@@ -1,4 +1,4 @@
-package com.github.davidseptimus.paletteerintellijplugin.toolWindow
+package com.github.davidseptimus.paletteer.toolWindow
 
 import com.intellij.icons.AllIcons
 import com.intellij.openapi.actionSystem.ActionUpdateThread

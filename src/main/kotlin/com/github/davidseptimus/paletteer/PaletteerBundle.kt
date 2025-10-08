@@ -1,4 +1,4 @@
-package com.github.davidseptimus.paletteerintellijplugin
+package com.github.davidseptimus.paletteer
 
 import com.intellij.DynamicBundle
 import org.jetbrains.annotations.NonNls

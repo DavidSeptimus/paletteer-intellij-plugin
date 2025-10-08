@@ -1,4 +1,4 @@
-package com.github.davidseptimus.paletteerintellijplugin.toolWindow
+package com.github.davidseptimus.paletteer.toolWindow
 
 import javax.swing.text.AttributeSet
 import javax.swing.text.DocumentFilter

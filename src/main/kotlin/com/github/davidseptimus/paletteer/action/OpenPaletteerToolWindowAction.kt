@@ -1,4 +1,4 @@
-package com.github.davidseptimus.paletteerintellijplugin.action
+package com.github.davidseptimus.paletteer.action
 
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
