@@ -63,7 +63,7 @@ class PaletteerToolWindowFactory : ToolWindowFactory {
         // Create Export tab
         val exportPanel = ExportPanel(project)
         val exportContent = contentFactory.createContent(
-            exportPanel,
+            exportPanel.component,
             PaletteerBundle.message("toolWindow.tab.export"),
             false
         )
