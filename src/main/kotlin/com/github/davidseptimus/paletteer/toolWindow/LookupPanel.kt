@@ -1,6 +1,9 @@
 package com.github.davidseptimus.paletteer.toolWindow
 
 import com.github.davidseptimus.paletteer.PaletteerBundle
+import com.github.davidseptimus.paletteer.util.EditorAttributeUtils
+import com.github.davidseptimus.paletteer.util.EditorAttributeUtils.findVisibleForegroundAttributeAtOffset
+import com.github.davidseptimus.paletteer.util.toHex
 import com.intellij.icons.AllIcons
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.editor.Editor
@@ -291,8 +294,8 @@ private class ColorCellRenderer : TableCellRenderer {
     ): Component {
         if (value is Color) {
             label.background = value
-            label.text = String.format("%06X", value.rgb and 0xFFFFFF)
-            label.foreground = if (value.red + value.green + value.blue > 382) Color.BLACK else Color.WHITE
+            label.text = value.toHex()
+            label.foreground = if (value.red + value.green + value.blue > 382) JBColor.BLACK else JBColor.WHITE
         } else {
             label.background = table.background
             label.text = ""
@@ -502,7 +505,7 @@ class LookupPanel(private val project: Project) : JBPanel<JBPanel<*>>(), Disposa
     private fun createResultsTable(): TableView<AttributeRow> {
         val table = TableView(tableModel)
         table.setCellSelectionEnabled(true)
-        table.inputMap.put(javax.swing.KeyStroke.getKeyStroke("meta C"), "copyCell")
+        table.inputMap.put(KeyStroke.getKeyStroke("meta C"), "copyCell")
         table.actionMap.put("copyCell", object : AbstractAction() {
             override fun actionPerformed(e: java.awt.event.ActionEvent?) {
                 val row = table.selectedRow
@@ -510,7 +513,7 @@ class LookupPanel(private val project: Project) : JBPanel<JBPanel<*>>(), Disposa
                 if (row >= 0 && col >= 0) {
                     val value = table.getValueAt(row, col)
                     val text = when (value) {
-                        is Color -> String.format("%06X", value.rgb and 0xFFFFFF)
+                        is Color -> value.toHex()
                         is Boolean -> value.toString()
                         null -> ""
                         else -> value.toString()
@@ -608,7 +611,7 @@ class LookupPanel(private val project: Project) : JBPanel<JBPanel<*>>(), Disposa
         }
 
         // Sort results alphabetically by key (case-insensitive, nulls last)
-        val sortedResults = results.sortedWith(compareBy({ it.key.lowercase() }, { it.key == null }))
+        val sortedResults = results.sortedWith(compareBy({ it.key.lowercase() }))
         tableModel.items = sortedResults
     }
 
@@ -754,38 +757,9 @@ class LookupPanel(private val project: Project) : JBPanel<JBPanel<*>>(), Disposa
         val offset = editor.caretModel.offset
         val editorImpl = editor as? EditorImpl ?: return
 
-        val results = mutableListOf<String>()
-
-        // Process markup model
-        val editorModel = editorImpl.markupModel
-        val documentModel = editorImpl.filteredDocumentMarkupModel
-        val processor = CommonProcessors.CollectProcessor<RangeHighlighterEx>()
-
-        editorModel.processRangeHighlightersOverlappingWith(offset, offset + 1, processor)
-        documentModel.processRangeHighlightersOverlappingWith(offset, offset + 1, processor)
-
-        val highlighters = processor.results.sortedByDescending { it.layer }
-        for (highlighter in highlighters) {
-            val key = highlighter.textAttributesKey
-            if (key?.externalName != null && key.externalName != "IDENTIFIER_UNDER_CARET_ATTRIBUTES") {
-                results.add(key.externalName)
-            }
-        }
-
-        // Process syntax model
-        val iterator = editorImpl.highlighter.createIterator(offset)
-        if (!iterator.atEnd() && iterator.start <= offset && offset < iterator.end) {
-            val keys = iterator.textAttributesKeys
-            keys.forEach { key ->
-                if (key.externalName != "IDENTIFIER_UNDER_CARET_ATTRIBUTES") {
-                    results.add(key.externalName)
-                }
-            }
-        }
-
-        // Update search field with the first result
-        if (results.isNotEmpty()) {
-            val newText = results.first()
+        val result = findVisibleForegroundAttributeAtOffset(editorImpl, offset, editor.colorsScheme)
+        if (result != null) {
+            val newText = result.key.externalName
             searchField.text = newText
             if (newText.isNotBlank()) {
                 SearchHistoryService.getInstance().addSearch(newText)

@@ -1,6 +1,7 @@
 package com.github.davidseptimus.paletteer.action
 
 import com.github.davidseptimus.paletteer.PaletteerBundle
+import com.github.davidseptimus.paletteer.util.toHex
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.ui.JBColor
 import com.intellij.ui.components.JBLabel
@@ -130,7 +131,7 @@ class TextAttributeDialog(
                 layout = BorderLayout(5, 0)
             }
 
-            val colorHex = color?.let { String.format("#%06X", 0xFFFFFF and it.rgb) } ?: "default"
+            val colorHex = color?.toHex() ?: "default"
             colorPanel.add(JBTextField(colorHex).apply {
                 isEditable = false
                 border = null

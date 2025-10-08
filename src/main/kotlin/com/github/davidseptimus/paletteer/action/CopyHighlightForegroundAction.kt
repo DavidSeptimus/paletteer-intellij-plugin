@@ -1,6 +1,8 @@
 package com.github.davidseptimus.paletteer.action
 
 import com.github.davidseptimus.paletteer.PaletteerNotifier
+import com.github.davidseptimus.paletteer.util.EditorAttributeUtils
+import com.github.davidseptimus.paletteer.util.toHex
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
@@ -36,35 +38,10 @@ class CopyHighlightForegroundAction : AnAction() {
         editorModel.processRangeHighlightersOverlappingWith(offset, offset + 1, processor)
         documentModel.processRangeHighlightersOverlappingWith(offset, offset + 1, processor)
 
-        // Outermost = highest layer WITH a text attribute foreground color
-        val markupHighlighter = processor.results
-            .filter {
-                val attrs = it.getTextAttributes(scheme) ?: it.forcedTextAttributes
-                attrs?.foregroundColor != null
-            }
-            .maxByOrNull { it.layer }
-        val markupColor = markupHighlighter?.getTextAttributes(scheme)?.foregroundColor
-            ?: markupHighlighter?.forcedTextAttributes?.foregroundColor
-
-        var color = markupColor
-
-        // If no color found in markup, check syntax highlighting
-        if (color == null) {
-            val iterator = editorImpl.highlighter.createIterator(offset)
-            if (!iterator.atEnd() && iterator.start <= offset && offset < iterator.end) {
-                val keys = iterator.textAttributesKeys
-                for (key in keys) {
-                    val schemeAttrs = scheme.getAttributes(key)
-                    if (schemeAttrs?.foregroundColor != null) {
-                        color = schemeAttrs.foregroundColor
-                        break
-                    }
-                }
-            }
-        }
+        val color = EditorAttributeUtils.findVisibleForegroundAttributeAtOffset(editorImpl, offset, scheme)?.attributes?.foregroundColor
 
         if (color != null) {
-            val hex = String.format("#%06X", color.rgb and 0xFFFFFF)
+            val hex = color.toHex()
             val clipboard = Toolkit.getDefaultToolkit().systemClipboard
             clipboard.setContents(StringSelection(hex), null)
         } else {
@@ -72,3 +49,4 @@ class CopyHighlightForegroundAction : AnAction() {
         }
     }
 }
+

@@ -1,6 +1,7 @@
 package com.github.davidseptimus.paletteer.toolWindow
 
 import com.github.davidseptimus.paletteer.PaletteerBundle
+import com.github.davidseptimus.paletteer.util.toHex
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.editor.colors.EditorColorsManager
 import com.intellij.openapi.project.Project
@@ -103,8 +104,7 @@ class ReplacePanel(private val project: Project) : JPanel(), Disposable {
                     colorSetter(selectedColor)
                     colorButtonComponent.background = selectedColor
                     colorButtonComponent.repaint()
-                    val hex = String.format("%06X", (0xFFFFFF and selectedColor.rgb))
-                    colorTextField.text = hex
+                    colorTextField.text = selectedColor.toHex()
                 }
             }
         })

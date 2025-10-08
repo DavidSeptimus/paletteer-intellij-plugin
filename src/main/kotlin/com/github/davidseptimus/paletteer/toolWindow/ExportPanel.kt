@@ -1,6 +1,7 @@
 package com.github.davidseptimus.paletteer.toolWindow
 
 import com.github.davidseptimus.paletteer.PaletteerBundle
+import com.github.davidseptimus.paletteer.util.toHex
 import com.intellij.ide.util.PropertiesComponent
 import com.intellij.notification.NotificationAction
 import com.intellij.notification.NotificationGroupManager
@@ -211,13 +212,7 @@ class ExportPanel(private val project: Project) : Disposable {
         colorKeys?.forEach { key ->
             val color = scheme.getColor(key as ColorKey)
             if (color != null) {
-                val hex = if (color.alpha == 255) {
-                    // Fully opaque - use 6-digit hex (RGB)
-                    String.format("%06x", color.rgb and 0xFFFFFF)
-                } else {
-                    // Has transparency - use 8-digit hex (ARGB)
-                    String.format("%08x", color.rgb)
-                }
+                val hex = color.toHex()
                 sb.appendLine("    <option name=\"${key.externalName}\" value=\"$hex\" />")
             }
         }
@@ -232,20 +227,12 @@ class ExportPanel(private val project: Project) : Disposable {
                 sb.appendLine("      <value>")
 
                 attrs.foregroundColor?.let {
-                    val hex = if (it.alpha == 255) {
-                        String.format("%06x", it.rgb and 0xFFFFFF)
-                    } else {
-                        String.format("%08x", it.rgb)
-                    }
+                    val hex = it.toHex()
                     sb.appendLine("        <option name=\"FOREGROUND\" value=\"$hex\" />")
                 }
 
                 attrs.backgroundColor?.let {
-                    val hex = if (it.alpha == 255) {
-                        String.format("%06x", it.rgb and 0xFFFFFF)
-                    } else {
-                        String.format("%08x", it.rgb)
-                    }
+                    val hex = it.toHex()
                     sb.appendLine("        <option name=\"BACKGROUND\" value=\"$hex\" />")
                 }
 
@@ -254,11 +241,7 @@ class ExportPanel(private val project: Project) : Disposable {
                 }
 
                 attrs.effectColor?.let {
-                    val hex = if (it.alpha == 255) {
-                        String.format("%06x", it.rgb and 0xFFFFFF)
-                    } else {
-                        String.format("%08x", it.rgb)
-                    }
+                    val hex = it.toHex()
                     sb.appendLine("        <option name=\"EFFECT_COLOR\" value=\"$hex\" />")
                 }
 
